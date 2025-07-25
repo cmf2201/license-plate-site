@@ -15,28 +15,23 @@
   <div id="plates-container">Loading...</div>
 
   <script>
-    const sheetURL = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/gviz/tq?tqx=out:json";
+    const sheetURL = "https://sheetdb.io/api/v1/hp4ro0lvzyqhc";
 
     fetch(sheetURL)
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substring(47).slice(0, -2));
-        const rows = json.table.rows;
+      .then(res => res.json())
+      .then(data => {
         const container = document.getElementById("plates-container");
         container.innerHTML = "";
 
-        rows.forEach(row => {
-          const plate = row.c[0]?.v || "Unknown";
-          const state = row.c[1]?.v || "Unknown";
-          const date = row.c[2]?.v || "Unknown";
-          const imageLink = row.c[3]?.v || null;
+        data.forEach(record => {
+          const timestamp = record["Timestamp"] || "Unknown";
+          const state = record["State?"] || "Unknown";
 
           const div = document.createElement("div");
           div.className = "plate";
           div.innerHTML = `
-            <h2>${plate} (${state})</h2>
-            <p>Found on: ${date}</p>
-            ${imageLink ? `<img src="${imageLink}" alt="${plate}">` : '<p>No photo</p>'}
+            <h2>Plate from ${state}</h2>
+            <p>Submitted: ${timestamp}</p>
           `;
           container.appendChild(div);
         });
