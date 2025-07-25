@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>License Plate Game</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f5f5f5; }
+    h1 { color: #333; }
+    .plate { background: white; padding: 10px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    img { max-width: 300px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>License Plate Sightings</h1>
+  <div id="plates-container">Loading...</div>
+
+  <script>
+    const sheetURL = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/gviz/tq?tqx=out:json";
+
+    fetch(sheetURL)
+      .then(res => res.text())
+      .then(text => {
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        const rows = json.table.rows;
+        const container = document.getElementById("plates-container");
+        container.innerHTML = "";
+
+        rows.forEach(row => {
+          const plate = row.c[0]?.v || "Unknown";
+          const state = row.c[1]?.v || "Unknown";
+          const date = row.c[2]?.v || "Unknown";
+          const imageLink = row.c[3]?.v || null;
+
+          const div = document.createElement("div");
+          div.className = "plate";
+          div.innerHTML = `
+            <h2>${plate} (${state})</h2>
+            <p>Found on: ${date}</p>
+            ${imageLink ? `<img src="${imageLink}" alt="${plate}">` : '<p>No photo</p>'}
+          `;
+          container.appendChild(div);
+        });
+      })
+      .catch(error => {
+        document.getElementById("plates-container").innerText = "Failed to load data.";
+        console.error("Error:", error);
+      });
+  </script>
+</body>
+</html>
