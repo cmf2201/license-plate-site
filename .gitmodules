@@ -1,0 +1,3 @@
+[submodule "us-license-plates"]
+	path = us-license-plates
+	url = https://github.com/cmf2201/us-license-plates.git
