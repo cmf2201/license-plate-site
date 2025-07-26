@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>License Plates by State</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+    h1 { text-align: center; }
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin-top: 30px;
+    }
+    .plate-box {
+      background: white;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .plate-box img {
+      width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .plate-name {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #333;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="title">Loading...</h1>
+  <div class="grid-container" id="plates-container">Loading plates...</div>
+
+  <script>
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    const state = getQueryParam('state');
+    const title = document.getElementById('title');
+    const container = document.getElementById('plates-container');
+
+    if (!state) {
+      title.textContent = "Error: No state specified.";
+      container.innerHTML = "";
+    } else {
+      title.textContent = `Plates from ${state}`;
+
+      fetch("files/state_images.json")
+        .then(res => res.json())
+        .then(data => {
+          const images = data[state];
+          if (!images || images.length === 0) {
+            container.innerHTML = "<p>No plates found for this state.</p>";
+            return;
+          }
+
+          container.innerHTML = "";
+          images.forEach(path => {
+            const box = document.createElement("div");
+            box.className = "plate-box";
+            box.innerHTML = `
+              <img src="${path}" alt="${path}">
+              <div class="plate-name">${path.split('/').pop()}</div>
+            `;
+            container.appendChild(box);
+          });
+        })
+        .catch(err => {
+          console.error("Failed to load state_images.json", err);
+          container.innerHTML = "<p>Error loading plates.</p>";
+        });
+    }
+  </script>
+</body>
+</html>
