@@ -4,42 +4,61 @@
   <meta charset="UTF-8">
   <title>License Plate Game</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: #242424; }
-    h1 { color: lightblue; }
-    .plate { background: grey; padding: 10px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    img { max-width: 300px; border-radius: 4px; }
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f0f0f0; }
+    h1 { text-align: center; color: #333; }
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin-top: 40px;
+    }
+    .state-box {
+      background: white;
+      padding: 10px;
+      text-align: center;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .state-box:hover {
+      transform: scale(1.05);
+    }
+    .state-box img {
+      width: 100%;
+      max-height: 120px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+    .state-box h2 {
+      font-size: 1rem;
+      margin: 10px 0 0;
+    }
   </style>
 </head>
 <body>
-  <h1>License Plate Sightings</h1>
-  <div id="plates-container">Loading...</div>
+  <h1>License Plate Gallery by State</h1>
+  <div class="grid-container" id="states-container">Loading states...</div>
 
   <script>
-    const sheetURL = "https://sheetdb.io/api/v1/hp4ro0lvzyqhc";
+    fetch('files/image_index.json')
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("states-container");
+      container.innerHTML = "";
 
-    fetch(sheetURL)
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById("plates-container");
-        container.innerHTML = "";
-
-        data.forEach(record => {
-          const timestamp = record["Timestamp"] || "Unknown";
-          const state = record["State?"] || "Unknown";
-
-          const div = document.createElement("div");
-          div.className = "plate";
-          div.innerHTML = `
-            <h2>Plate from ${state}</h2>
-            <p>Submitted: ${timestamp}</p>
-          `;
-          container.appendChild(div);
-        });
-      })
-      .catch(error => {
-        document.getElementById("plates-container").innerText = "Failed to load data.";
-        console.error("Error:", error);
-      });
+      for (const state in data) {
+        const box = document.createElement("div");
+        box.className = "state-box";
+        box.onclick = () => window.location.href = `state.html?state=${state}`;
+        
+        box.innerHTML = `
+          <img src="${data[state]}" alt="${state}">
+          <h2>${state}</h2>
+        `;
+        container.appendChild(box);
+      }
+    });
   </script>
 </body>
 </html>
