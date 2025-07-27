@@ -36,47 +36,78 @@
   <h1 id="title">Loading...</h1>
   <div class="grid-container" id="plates-container">Loading plates...</div>
 
-  <script>
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
+<script>
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
 
-    const state = getQueryParam('state');
-    const title = document.getElementById('title');
-    const container = document.getElementById('plates-container');
+  const state = getQueryParam('state');
+  const title = document.getElementById('title');
+  const container = document.getElementById('plates-container');
 
-    if (!state) {
-      title.textContent = "Error: No state specified.";
-      container.innerHTML = "";
-    } else {
-      title.textContent = `Plates from ${state}`;
+  if (!state) {
+    title.textContent = "Error: No state specified.";
+    container.innerHTML = "";
+  } else {
+    title.textContent = `Plates from ${state}`;
 
-      fetch("files/state_images.json")
-        .then(res => res.json())
-        .then(data => {
-          const images = data[state];
-          if (!images || images.length === 0) {
-            container.innerHTML = "<p>No plates found for this state.</p>";
-            return;
+    Promise.all([
+      fetch("files/state_images.json").then(res => res.json()),
+      fetch("https://sheetdb.io/api/v1/yjbq9pzk8pzs6").then(res => res.json())
+    ]).then(([stateImages, formData]) => {
+      const images = stateImages[state];
+      if (!images || images.length === 0) {
+        container.innerHTML = "<p>No plates found for this state.</p>";
+        return;
+      }
+
+      // Step 1: Build sightings map
+      const sightings = {};  // key: plateName, value: { count, lastDate }
+      const plateColumn = `Choose a plate from ${state}`;
+      const timestampColumn = "Timestamp";
+
+      formData.forEach(row => {
+        const plate = row[plateColumn]?.trim();
+        const timestamp = row[timestampColumn];
+
+        if (plate) {
+          if (!sightings[plate]) {
+            sightings[plate] = { count: 0, lastDate: null };
           }
+          sightings[plate].count += 1;
 
-          container.innerHTML = "";
-          images.forEach(path => {
-            const box = document.createElement("div");
-            box.className = "plate-box";
-            box.innerHTML = `
-              <img src="${path}" alt="${path}">
-              <div class="plate-name">${path.split('/').pop()}</div>
-            `;
-            container.appendChild(box);
-          });
-        })
-        .catch(err => {
-          console.error("Failed to load state_images.json", err);
-          container.innerHTML = "<p>Error loading plates.</p>";
-        });
-    }
-  </script>
+          if (!sightings[plate].lastDate || new Date(timestamp) > new Date(sightings[plate].lastDate)) {
+            sightings[plate].lastDate = timestamp;
+          }
+        }
+      });
+
+      // Step 2: Render plate grid
+      container.innerHTML = "";
+      images.forEach(path => {
+        const plateName = path.split('/').pop().replace(/\.(jpg|jpeg|png)$/i, '');
+        const sighting = sightings[plateName] || { count: 0, lastDate: "Never" };
+
+        const box = document.createElement("div");
+        box.className = "plate-box";
+        box.innerHTML = `
+          <img src="${path}" alt="${plateName}">
+          <div class="plate-name">
+            ${plateName}<br>
+            <strong>Seen: ${sighting.count}×</strong><br>
+            <small>Last seen: ${sighting.lastDate}</small>
+          </div>
+        `;
+        container.appendChild(box);
+      });
+    }).catch(err => {
+      console.error("Failed to load data:", err);
+      container.innerHTML = "<p>Error loading plates.</p>";
+    });
+  }
+</script>
+
+
 </body>
 </html>
