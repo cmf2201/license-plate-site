@@ -92,8 +92,8 @@
     const ENTRY_ID = "entry.23481005";  // Replace with real entry ID
 
     Promise.all([
-      fetch("files/state_images.json").then(res => res.json()),
-      fetch("files/licenseplates.json").then(res => res.json()),
+      fetch("us-license-plates/json_files/state_license_index.json").then(res => res.json()),
+      fetch("us-license-plates/json_files/plate_names.json").then(res => res.json()),
       fetch(SHEET_URL).then(res => res.text()).then(parseGoogleSheetData)
     ]).then(([imagePaths, plateNamesByState, formData]) => {
       const plateNames = plateNamesByState[state];
