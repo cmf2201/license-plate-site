@@ -1,1 +1,4 @@
-Google sheet: https://docs.google.com/spreadsheets/d/1VJ6I5uc7rG7zk6-zMU8oPipd-o1kn-mdD6MOf2eOCIg/gviz/tq?tqx=out:json
+const DROPBOX_LINK = "https://www.dropbox.com/scl/fi/x9jeob5jl5e465jbs7y6w/licenseplates.json?rlkey=4kyrq869fq9ujp6mbsvq1x5iw&st=2agzdhun&raw-1"
+const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLScSdoTszuz61LupEfd6_nZC-Bu8YQBYoFg4SO4p_LC-CkMLnA/viewform?usp=pp_url";
+const ENTRY_ID = "entry.23481005"; // Replace with your real one
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1X3oVox7VSsRCcUtQdQV8FxUT00sl2b2D0Jrv-rSuLno/gviz/tq?tqx=out:json"
