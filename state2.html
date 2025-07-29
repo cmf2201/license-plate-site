@@ -7,17 +7,11 @@
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
     h1 { text-align: center; }
-    .section-header {
-      font-size: 1.2rem;
-      margin-top: 40px;
-      margin-bottom: 10px;
-      color: #555;
-    }
     .grid-container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      grid-template-columns: repeat(5, 1fr);
       gap: 15px;
-      margin-bottom: 40px;
+      margin-top: 30px;
     }
     .plate-box {
       background: white;
@@ -42,6 +36,18 @@
       background-color: #d4edda;
       border: 2px solid #28a745;
     }
+
+    @media (max-width: 768px) {
+      .grid-container {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 500px) {
+      .grid-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
   </style>
 </head>
 <body>
@@ -49,7 +55,7 @@
   <p style="text-align:center;">
     <a href="index.html" style="text-decoration:none; font-size:0.9rem; color:#007bff;">← Back to Home</a>
   </p>
-  <div id="plates-wrapper">Loading plates...</div>
+  <div class="grid-container" id="plates-container">Loading plates...</div>
 
 <script>
   function getQueryParam(param) {
@@ -73,49 +79,48 @@
 
   const state = getQueryParam('state');
   const title = document.getElementById('title');
-  const wrapper = document.getElementById('plates-wrapper');
+  const container = document.getElementById('plates-container');
 
   if (!state) {
     title.textContent = "Error: No state specified.";
-    wrapper.innerHTML = "";
+    container.innerHTML = "";
   } else {
     title.textContent = `Plates from ${state}`;
 
     const SHEET_URL = "https://docs.google.com/spreadsheets/d/1X3oVox7VSsRCcUtQdQV8FxUT00sl2b2D0Jrv-rSuLno/gviz/tq?tqx=out:json";
     const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLScSdoTszuz61LupEfd6_nZC-Bu8YQBYoFg4SO4p_LC-CkMLnA/viewform?usp=pp_url";
-    const ENTRY_ID = "entry.23481005";
+    const ENTRY_ID = "entry.23481005";  // Replace with real entry ID
 
     Promise.all([
-      fetch("us-license-plates/json_files/nested_categories.json").then(res => res.json()),
+      fetch("us-license-plates/json_files/state_license_index.json").then(res => res.json()),
       fetch("us-license-plates/json_files/plate_names.json").then(res => res.json()),
       fetch(SHEET_URL).then(res => res.text()).then(parseGoogleSheetData)
     ]).then(([imagePaths, plateNamesByState, formData]) => {
-      const plateNamesByCategory = plateNamesByState[state];
-      const imagePathsByCategory = imagePaths[state];
+      const plateNames = plateNamesByState[state];
+      const imagePathsForState = imagePaths[state];
 
-      if (!plateNamesByCategory || !imagePathsByCategory) {
-        wrapper.innerHTML = "<p>No plates found for this state.</p>";
+      if (!plateNames || !imagePathsForState) {
+        container.innerHTML = "<p>No plates found for this state.</p>";
         return;
       }
 
-      // Build image lookup table
       const imageLookup = {};
-      Object.entries(imagePathsByCategory).forEach(([category, paths]) => {
-        paths.forEach(path => {
-          const key = path.split('/').pop().replace(/\.(jpg|jpeg|png)$/i, '');
-          imageLookup[key] = { path, category };
-        });
+      imagePathsForState.forEach(path => {
+        const key = path.split('/').pop().replace(/\.(jpg|jpeg|png)$/i, '');
+        imageLookup[key] = path;
       });
 
-      // Collect plate sightings from form data
       const sightings = {};
       const columnHeader = "What Plate Did You See?";
+
       formData.forEach(row => {
         let plate = row[columnHeader]?.trim();
         const timestamp = row["Timestamp"];
         if (plate) {
+          // Remove state prefix (e.g., "AK - In-God-We-Trust" → "In-God-We-Trust")
           const parts = plate.split(" - ");
           plate = parts.length > 1 ? parts[1] : parts[0];
+
           if (!sightings[plate]) sightings[plate] = { count: 0, lastDate: null };
           sightings[plate].count += 1;
 
@@ -130,57 +135,41 @@
         }
       });
 
-      wrapper.innerHTML = "";
 
-      // Render each category section
-      Object.entries(plateNamesByCategory).forEach(([category, plateList]) => {
-        const section = document.createElement("div");
+      container.innerHTML = "";
+      plateNames.forEach(plateName => {
+        const data = sightings[plateName] || { count: 0, lastDate: "Never" };
+        const imagePath = imageLookup[plateName];
+        const formURL = `${FORM_BASE}&${ENTRY_ID}=${encodeURIComponent(`${state} - ${plateName}`)}`;
 
-        const header = document.createElement("h2");
-        header.className = "section-header";
-        header.textContent = category.charAt(0).toUpperCase() + category.slice(1);
-        section.appendChild(header);
+        if (!imagePath) return;
 
-        const grid = document.createElement("div");
-        grid.className = "grid-container";
+        const box = document.createElement("div");
+        box.className = "plate-box";
+        if (data.count > 0) box.classList.add("seen");
+        box.onclick = () => window.open(formURL, '_blank');
 
-        plateList.forEach(plateName => {
-          const lookup = imageLookup[plateName];
-          if (!lookup || lookup.category !== category) return;
-
-          const data = sightings[plateName] || { count: 0, lastDate: "Never" };
-          const formURL = `${FORM_BASE}&${ENTRY_ID}=${encodeURIComponent(`${state} - ${plateName}`)}`;
-
-          const box = document.createElement("div");
-          box.className = "plate-box";
-          if (data.count > 0) box.classList.add("seen");
-          box.onclick = () => window.open(formURL, '_blank');
-
-          box.innerHTML = `
-            <img src="${lookup.path}" alt="${plateName}">
-            <div class="plate-name">
-              ${plateName}<br>
-              <strong>Seen: ${data.count}×</strong><br>
-              <small>Last seen: ${
-                data.lastDate instanceof Date
-                  ? data.lastDate.toLocaleString("en-US", {
-                      month: "2-digit", day: "2-digit", year: "2-digit",
-                      hour: "2-digit", minute: "2-digit", second: "2-digit",
-                      hour12: false
-                    })
-                  : data.lastDate
-              }</small>
-            </div>
-          `;
-          grid.appendChild(box);
-        });
-
-        section.appendChild(grid);
-        wrapper.appendChild(section);
+        box.innerHTML = `
+          <img src="${imagePath}" alt="${plateName}">
+          <div class="plate-name">
+            ${plateName}<br>
+            <strong>Seen: ${data.count}×</strong><br>
+            <small>Last seen: ${
+              data.lastDate instanceof Date
+                ? data.lastDate.toLocaleString("en-US", {
+                    month: "2-digit", day: "2-digit", year: "2-digit",
+                    hour: "2-digit", minute: "2-digit", second: "2-digit",
+                    hour12: false
+                  })
+                : data.lastDate
+            }</small>
+          </div>
+        `;
+        container.appendChild(box);
       });
     }).catch(err => {
       console.error("Failed to load data:", err);
-      wrapper.innerHTML = "<p>Error loading plates.</p>";
+      container.innerHTML = "<p>Error loading plates.</p>";
     });
   }
 </script>
