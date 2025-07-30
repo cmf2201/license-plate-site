@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>License Plate Game</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f0f0f0; }
-    h1 { text-align: center; color: #333; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #121212; color: #f5f5f5; }
+    h1 { text-align: center; color: #c1c1c1; }
     .grid-container {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -14,13 +14,13 @@
       margin-top: 40px;
     }
     .state-box {
-      background: white;
-      padding: 10px;
+      background: #3e3e42;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 2px 4px rgba(255,255,255,0.05);
       text-align: center;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       cursor: pointer;
-      transition: transform 0.2s;
+      color: #f5f5f5;
     }
     .state-box:hover {
       transform: scale(1.05);
@@ -49,7 +49,7 @@
   </style>
 </head>
 <body>
-  <h1>License Plate Gallery by State</h1>
+  <h1>State Game for the USA</h1>
   <div class="grid-container" id="states-container">Loading states...</div>
 
   <script>
@@ -59,7 +59,9 @@
       const container = document.getElementById("states-container");
       container.innerHTML = "";
 
-      for (const state in data) {
+      const sortedStates = Object.keys(data).sort((a, b) => a.localeCompare(b));
+
+      sortedStates.forEach(state => {
         const box = document.createElement("div");
         box.className = "state-box";
         box.onclick = () => window.location.href = `state.html?state=${state}`;
@@ -69,7 +71,7 @@
           <h2>${state}</h2>
         `;
         container.appendChild(box);
-      }
+      });
     });
   </script>
 </body>
